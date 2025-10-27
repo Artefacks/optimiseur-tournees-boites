@@ -39,21 +39,15 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label for="maxBoxes" class="form-label">Nombre de boîtes</label>
                                 <input type="number" class="form-control" id="maxBoxes" value="20" min="1" max="50">
                             </div>
-                            <div class="col-md-3">
-                                <label for="minScore" class="form-label">Score minimum</label>
-                                <input type="number" class="form-control" id="minScore" value="30" min="0" max="100" step="5">
+                            <div class="col-md-4">
+                                <label for="deliveryDate" class="form-label">Date de livraison</label>
+                                <input type="date" class="form-control" id="deliveryDate">
                             </div>
-                            <div class="col-md-3">
-                                <label for="communeFilter" class="form-label">Commune</label>
-                                <select class="form-select" id="communeFilter">
-                                    <option value="">Toutes les communes</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
+                            <div class="col-md-4 d-flex align-items-end">
                                 <button class="btn btn-primary w-100" onclick="applyFilters()">
                                     <i class="fas fa-search me-2"></i>Appliquer
                                 </button>
@@ -66,7 +60,7 @@
 
         <!-- Statistiques rapides -->
         <div class="row mb-4" id="quickStats" style="display: none;">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card text-center">
                     <div class="card-body">
                         <h5 class="card-title text-primary">Total Boîtes</h5>
@@ -74,7 +68,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card text-center">
                     <div class="card-body">
                         <h5 class="card-title text-success">Visitées</h5>
@@ -82,7 +76,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card text-center">
                     <div class="card-body">
                         <h5 class="card-title text-info">Taux Visite</h5>
@@ -90,11 +84,27 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <div class="card text-center">
                     <div class="card-body">
                         <h5 class="card-title text-warning">Remplissage Moyen</h5>
                         <h3 class="text-warning" id="avgFill">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-danger">Boîtes Urgentes</h5>
+                        <h3 class="text-danger" id="urgentBoxes">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-secondary">Score Moyen</h5>
+                        <h3 class="text-secondary" id="avgScore">-</h3>
                     </div>
                 </div>
             </div>

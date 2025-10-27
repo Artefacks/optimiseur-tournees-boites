@@ -131,8 +131,10 @@ body {
 
 .address-text {
     font-size: 0.9rem;
-    color: #6c757d;
+    color: #ffffff;
     margin-bottom: 0.5rem;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .metric-item {
