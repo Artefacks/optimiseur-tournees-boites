@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimiseur de Tournées - Boîtes à Habits</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="fas fa-recycle me-2"></i>
+                Optimiseur de Tournées - Boîtes à Habits
+            </span>
+            <div class="d-flex">
+                <button class="btn btn-outline-light me-2" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Actualiser
+                </button>
+                <button class="btn btn-outline-light me-2" onclick="showStats()">
+                    <i class="fas fa-chart-bar"></i> Statistiques
+                </button>
+                <button class="btn btn-outline-warning" onclick="resetVisits()" title="Supprimer toutes les visites de test">
+                    <i class="fas fa-trash-alt"></i> Reset Visites
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Filtres -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtres</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="maxBoxes" class="form-label">Nombre de boîtes</label>
+                                <input type="number" class="form-control" id="maxBoxes" value="20" min="1" max="50">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="minScore" class="form-label">Score minimum</label>
+                                <input type="number" class="form-control" id="minScore" value="30" min="0" max="100" step="5">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="communeFilter" class="form-label">Commune</label>
+                                <select class="form-select" id="communeFilter">
+                                    <option value="">Toutes les communes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                    <i class="fas fa-search me-2"></i>Appliquer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiques rapides -->
+        <div class="row mb-4" id="quickStats" style="display: none;">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">Total Boîtes</h5>
+                        <h3 class="text-primary" id="totalBoxes">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">Visitées</h5>
+                        <h3 class="text-success" id="visitedBoxes">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-info">Taux Visite</h5>
+                        <h3 class="text-info" id="visitRate">-</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning">Remplissage Moyen</h5>
+                        <h3 class="text-warning" id="avgFill">-</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglets -->
+        <div class="row">
+            <div class="col-md-12">
+                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="recommendations-tab" data-bs-toggle="tab" data-bs-target="#recommendations" type="button" role="tab">
+                            <i class="fas fa-star me-2"></i>Recommandations
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="all-boxes-tab" data-bs-toggle="tab" data-bs-target="#all-boxes" type="button" role="tab">
+                            <i class="fas fa-list me-2"></i>Toutes les Boîtes
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="visited-tab" data-bs-toggle="tab" data-bs-target="#visited" type="button" role="tab">
+                            <i class="fas fa-check-circle me-2"></i>Visites Récentes
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button" role="tab">
+                            <i class="fas fa-cog me-2"></i>Gestion des Boîtes
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="mainTabsContent">
+                    <!-- Onglet Recommandations -->
+                    <div class="tab-pane fade show active" id="recommendations" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-star me-2"></i>Recommandations de Visite
+                                </h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-primary" id="recommendationCount">0 boîtes</span>
+                                    <button class="btn btn-success btn-sm" onclick="exportToCSV()" title="Exporter en CSV">
+                                        <i class="fas fa-download me-1"></i>Export CSV
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="loadingSpinner" class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Chargement...</span>
+                                    </div>
+                                    <p class="mt-2">Chargement des recommandations...</p>
+                                </div>
+                                <div id="recommendationsList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Toutes les Boîtes -->
+                    <div class="tab-pane fade" id="all-boxes" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-list me-2"></i>Toutes les Boîtes
+                                </h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control" id="searchBox" placeholder="Rechercher par adresse ou numéro..." style="width: 300px;">
+                                    <button class="btn btn-outline-primary" onclick="searchBoxes()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="allBoxesList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Visites Récentes -->
+                    <div class="tab-pane fade" id="visited" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>Visites Récentes
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="visitedBoxesList"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onglet Gestion des Boîtes -->
+                    <div class="tab-pane fade" id="manage" role="tabpanel">
+                        <div class="row mt-3">
+                            <!-- Ajouter une nouvelle boîte -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-plus me-2"></i>Ajouter une Boîte
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="addBoxForm">
+                                            <div class="mb-3">
+                                                <label for="newBoxId" class="form-label">Numéro de Boîte *</label>
+                                                <input type="number" class="form-control" id="newBoxId" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="newBoxAddress" class="form-label">Adresse *</label>
+                                                <input type="text" class="form-control" id="newBoxAddress" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="newBoxCommune" class="form-label">Commune *</label>
+                                                <input type="text" class="form-control" id="newBoxCommune" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="newBoxCP" class="form-label">Code Postal *</label>
+                                                <input type="text" class="form-control" id="newBoxCP" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="newBoxContainer" class="form-label">Type de Conteneur *</label>
+                                                <select class="form-select" id="newBoxContainer" required>
+                                                    <option value="">Sélectionner...</option>
+                                                    <option value="Textile">Textile</option>
+                                                    <option value="Chaussures">Chaussures</option>
+                                                    <option value="Mixte">Mixte</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="newBoxVolume" class="form-label">Volume Moyen (0-10) *</label>
+                                                <input type="number" class="form-control" id="newBoxVolume" min="0" max="10" step="0.1" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-success w-100">
+                                                <i class="fas fa-plus me-2"></i>Ajouter la Boîte
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Gestion des boîtes existantes -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-edit me-2"></i>Modifier/Supprimer une Boîte
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="searchBoxId" class="form-label">Rechercher par Numéro</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="searchBoxId" placeholder="Numéro de boîte">
+                                                <button class="btn btn-outline-primary" onclick="searchBoxForEdit()">
+                                                    <i class="fas fa-search"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="boxEditForm" style="display: none;">
+                                            <form id="editBoxForm">
+                                                <input type="hidden" id="editBoxId">
+                                                <div class="mb-3">
+                                                    <label for="editBoxAddress" class="form-label">Adresse</label>
+                                                    <input type="text" class="form-control" id="editBoxAddress">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="editBoxCommune" class="form-label">Commune</label>
+                                                    <input type="text" class="form-control" id="editBoxCommune">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="editBoxCP" class="form-label">Code Postal</label>
+                                                    <input type="text" class="form-control" id="editBoxCP">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="editBoxContainer" class="form-label">Type de Conteneur</label>
+                                                    <select class="form-select" id="editBoxContainer">
+                                                        <option value="Textile">Textile</option>
+                                                        <option value="Chaussures">Chaussures</option>
+                                                        <option value="Mixte">Mixte</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="editBoxVolume" class="form-label">Volume Moyen (0-10)</label>
+                                                    <input type="number" class="form-control" id="editBoxVolume" min="0" max="10" step="0.1">
+                                                </div>
+                                                <div class="d-grid gap-2">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-save me-2"></i>Mettre à jour
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger" onclick="deleteBox()">
+                                                        <i class="fas fa-trash me-2"></i>Supprimer la Boîte
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour les détails d'une boîte -->
+    <div class="modal fade" id="boxDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Détails de la Boîte</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="boxDetailsContent">
+                    <!-- Contenu chargé dynamiquement -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    <button type="button" class="btn btn-success" onclick="markAsVisited()">
+                        <i class="fas fa-check me-2"></i>Marquer comme visitée
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour les statistiques -->
+    <div class="modal fade" id="statsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Statistiques Détaillées</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="statsContent">
+                    <!-- Contenu chargé dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
