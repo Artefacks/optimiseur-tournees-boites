@@ -166,24 +166,6 @@ def get_stats():
     avg_fills = optimizer.df['volume_moyen'].dropna()
     avg_fill = avg_fills.mean() if not avg_fills.empty else 0
     
-    # Compter les boîtes urgentes (jamais visitées ou > 14 jours)
-    urgent_boxes = 0
-    all_scores = []
-    
-    for _, row in optimizer.df.iterrows():
-        box_id = int(row['n_boite'])
-        days_since = optimizer.calculate_days_since_last_visit(box_id)
-        
-        # Boîte urgente si jamais visitée ou > 14 jours
-        if days_since is None or days_since > 14:
-            urgent_boxes += 1
-        
-        # Collecter les scores pour la moyenne
-        score = optimizer.calculate_profitability_score(box_id)
-        all_scores.append(score)
-    
-    avg_score = round(sum(all_scores) / len(all_scores), 1) if all_scores else 0
-    
     # Boîtes les plus performantes
     top_boxes = optimizer.df.nlargest(5, 'volume_moyen')[['n_boite', 'adresse', 'volume_moyen']].to_dict('records')
     
@@ -194,8 +176,6 @@ def get_stats():
             'visited_boxes': visited_boxes,
             'visit_rate': round((visited_boxes / total_boxes) * 100, 1) if total_boxes > 0 else 0,
             'average_fill': round(avg_fill, 1),
-            'urgent_boxes': urgent_boxes,
-            'avg_score': avg_score,
             'top_boxes': top_boxes
         }
     })

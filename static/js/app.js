@@ -5,10 +5,6 @@ let recommendations = [];
 
 // Initialisation de l'application
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialiser la date par défaut (aujourd'hui)
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('deliveryDate').value = today;
-    
     loadRecommendations();
     loadStats();
     loadCommunes();
@@ -393,8 +389,6 @@ function updateQuickStats(data) {
         document.getElementById('visitedBoxes').textContent = data.stats.visited_boxes;
         document.getElementById('visitRate').textContent = data.stats.visit_rate + '%';
         document.getElementById('avgFill').textContent = data.stats.average_fill;
-        document.getElementById('urgentBoxes').textContent = data.stats.urgent_boxes || 0;
-        document.getElementById('avgScore').textContent = data.stats.avg_score || 'N/A';
         document.getElementById('quickStats').style.display = 'block';
     }
 }
