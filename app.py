@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import pandas as pd
 from box_collection_optimizer import BoxCollectionOptimizer
 import json
+import os
 from datetime import datetime
 
 app = Flask(__name__)
