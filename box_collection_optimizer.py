@@ -807,17 +807,10 @@ class BoxCollectionOptimizer:
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 # En-têtes selon le format demandé
                 fieldnames = [
-                    'Numéro de client',
-                    'Nom du client', 
-                    'Rue et num',
-                    'Code postal',
-                    'Ville',
-                    'Numéro de commande',
-                    'Date de livraison',
-                    'Volume attendu (sur 10)',
-                    'Poids attendu (kg)',
-                    'Revenu (EUR)',
-                    'Temps de livraison (min)'
+                    'Temps de servi',
+                    'Revenu [CHF]',
+                    'Volume [u ou m3]',
+                    'Poids [kg]'
                 ]
                 
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -854,20 +847,14 @@ class BoxCollectionOptimizer:
                     # Créer la ligne CSV
                     volume_attendu = round(rec['expected_fill'], 2)
                     poids_attendu = round(180 * (rec['expected_fill'] / 10), 2)
-                    revenu = round(poids_attendu * 0.2, 2)
-                    temps_livraison = 15
+                    revenu = poids_attendu * 0.2
+                    # Format français
+                    fmt = lambda v: f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                     row = {
-                        'Numéro de client': f"GFL-C{rec['box_id']}",  # Format basé sur l'image
-                        'Nom du client': recommended_name,
-                        'Rue et num': formatted_address,
-                        'Code postal': postal_code,
-                        'Ville': rec['commune'],
-                        'Numéro de commande': str(base_order_number + i),
-                        'Date de livraison': datetime.now().strftime("%d/%m/%Y"),
-                        'Volume attendu (sur 10)': volume_attendu,
-                        'Poids attendu (kg)': poids_attendu,
-                        'Revenu (EUR)': revenu,
-                        'Temps de livraison (min)': temps_livraison
+                        'Temps de servi': str(temps_livraison),
+                        'Revenu [CHF]': fmt(revenu),
+                        'Volume [u ou m3]': fmt(volume_attendu),
+                        'Poids [kg]': fmt(poids_attendu)
                     }
                     
                     writer.writerow(row)
