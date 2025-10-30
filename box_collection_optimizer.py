@@ -813,7 +813,9 @@ class BoxCollectionOptimizer:
                     'Code postal',
                     'Ville',
                     'Numéro de commande',
-                    'Date de livraison'
+                    'Date de livraison',
+                    'Remplissage attendu (%)',
+                    'Revenu (EUR)'
                 ]
                 
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -848,6 +850,8 @@ class BoxCollectionOptimizer:
                     postal_code = str(rec['postal_code']).replace('.0', '')
                     
                     # Créer la ligne CSV
+                    remplissage_attendu = round(rec['expected_fill'] * 10, 1)  # % sur 100
+                    revenu = round(180 * (rec['expected_fill']/10) * 0.2, 2)   # en €
                     row = {
                         'Numéro de client': f"GFL-C{rec['box_id']}",  # Format basé sur l'image
                         'Nom du client': recommended_name,
@@ -855,7 +859,9 @@ class BoxCollectionOptimizer:
                         'Code postal': postal_code,
                         'Ville': rec['commune'],
                         'Numéro de commande': str(base_order_number + i),
-                        'Date de livraison': datetime.now().strftime("%d/%m/%Y")
+                        'Date de livraison': datetime.now().strftime("%d/%m/%Y"),
+                        'Remplissage attendu (%)': remplissage_attendu,
+                        'Revenu (EUR)': revenu
                     }
                     
                     writer.writerow(row)
