@@ -814,8 +814,10 @@ class BoxCollectionOptimizer:
                     'Ville',
                     'Numéro de commande',
                     'Date de livraison',
-                    'Remplissage attendu (%)',
-                    'Revenu (EUR)'
+                    'Volume attendu (sur 10)',
+                    'Poids attendu (kg)',
+                    'Revenu (EUR)',
+                    'Temps de livraison (min)'
                 ]
                 
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -850,8 +852,10 @@ class BoxCollectionOptimizer:
                     postal_code = str(rec['postal_code']).replace('.0', '')
                     
                     # Créer la ligne CSV
-                    remplissage_attendu = round(rec['expected_fill'] * 10, 1)  # % sur 100
-                    revenu = round(180 * (rec['expected_fill']/10) * 0.2, 2)   # en €
+                    volume_attendu = round(rec['expected_fill'], 2)
+                    poids_attendu = round(180 * (rec['expected_fill'] / 10), 2)
+                    revenu = round(poids_attendu * 0.2, 2)
+                    temps_livraison = 15
                     row = {
                         'Numéro de client': f"GFL-C{rec['box_id']}",  # Format basé sur l'image
                         'Nom du client': recommended_name,
@@ -860,8 +864,10 @@ class BoxCollectionOptimizer:
                         'Ville': rec['commune'],
                         'Numéro de commande': str(base_order_number + i),
                         'Date de livraison': datetime.now().strftime("%d/%m/%Y"),
-                        'Remplissage attendu (%)': remplissage_attendu,
-                        'Revenu (EUR)': revenu
+                        'Volume attendu (sur 10)': volume_attendu,
+                        'Poids attendu (kg)': poids_attendu,
+                        'Revenu (EUR)': revenu,
+                        'Temps de livraison (min)': temps_livraison
                     }
                     
                     writer.writerow(row)
