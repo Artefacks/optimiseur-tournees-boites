@@ -805,7 +805,7 @@ class BoxCollectionOptimizer:
         
         try:
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-                # En-têtes selon le format demandé
+                # En-têtes selon le format demandé (strictement ces 4 colonnes)
                 fieldnames = [
                     'Temps de servi',
                     'Revenu [CHF]',
@@ -816,46 +816,30 @@ class BoxCollectionOptimizer:
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writeheader()
                 
-                # Générer un numéro de commande de base
-                base_order_number = 10000
+                # Constantes métier
+                prix_par_kg_chf = 0.20
+                poids_max_kg = 180.0
+                temps_livraison_minutes = 15  # 15 min par boîte
                 
-                for i, rec in enumerate(recommendations):
-                    # Décomposer l'adresse
-                    rue, numero = self.parse_address(rec['address'])
+                for rec in recommendations:
+                    # Remplissage attendu sur échelle 0-10
+                    expected_fill = float(rec.get('expected_fill', 0.0) or 0.0)
+                    ratio_remplissage = max(0.0, min(expected_fill / 10.0, 1.0))
                     
-                    # Générer le nom recommandé
-                    box_data = self.df[self.df['n_boite'] == rec['box_id']]
-                    container_type = box_data['conteneur'].iloc[0] if not box_data.empty else 'Textile'
-                    recommended_name = self.generate_recommended_name(
-                        rec['box_id'], rec['commune'], container_type
-                    )
+                    # Calculs
+                    poids_kg = poids_max_kg * ratio_remplissage
+                    revenu_chf = poids_kg * prix_par_kg_chf
+                    volume_valeur = expected_fill  # garder l'échelle 0-10 (u)
                     
-                    # Formater l'adresse proprement
-                    if numero and rue:
-                        # Format: "avenue de la praille 47"
-                        formatted_address = f"{rue.lower()} {numero}"
-                    elif rue:
-                        # Pas de numéro, juste la rue
-                        formatted_address = rue.lower()
-                    else:
-                        # Fallback
-                        formatted_address = rec['address'].lower() if rec['address'] else ""
+                    # Format FR: 2 décimales, virgule comme séparateur décimal
+                    def fmt_fr(value: float) -> str:
+                        return f"{value:.2f}".replace('.', ',')
                     
-                    # Nettoyer le code postal (enlever .0 si présent)
-                    postal_code = str(rec['postal_code']).replace('.0', '')
-                    
-                    # Créer la ligne CSV
-                    volume_attendu = round(rec['expected_fill'], 2)
-                    poids_attendu = round(180 * (rec['expected_fill'] / 10), 2)
-                    revenu = poids_attendu * 0.2
-                    temps_livraison = 15
-                    # Format français
-                    fmt = lambda v: f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                     row = {
-                        'Temps de servi': str(temps_livraison),
-                        'Revenu [CHF]': fmt(revenu),
-                        'Volume [u ou m3]': fmt(volume_attendu),
-                        'Poids [kg]': fmt(poids_attendu)
+                        'Temps de servi': str(temps_livraison_minutes),
+                        'Revenu [CHF]': fmt_fr(revenu_chf),
+                        'Volume [u ou m3]': f"{volume_valeur:.2f}",
+                        'Poids [kg]': fmt_fr(poids_kg)
                     }
                     
                     writer.writerow(row)
