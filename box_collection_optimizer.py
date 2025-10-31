@@ -848,6 +848,7 @@ class BoxCollectionOptimizer:
                     volume_attendu = round(rec['expected_fill'], 2)
                     poids_attendu = round(180 * (rec['expected_fill'] / 10), 2)
                     revenu = poids_attendu * 0.2
+                    temps_livraison = 15
                     # Format français
                     fmt = lambda v: f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                     row = {
