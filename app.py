@@ -330,6 +330,9 @@ def export_csv():
         from flask import send_file
         import os
         
+        if not os.path.isfile(filename):
+            return jsonify({'success': False, 'error': 'Fichier CSV introuvable côté serveur'}), 500
+        
         return send_file(
             filename,
             as_attachment=True,

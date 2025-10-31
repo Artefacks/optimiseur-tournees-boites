@@ -609,31 +609,51 @@ async function loadCommunes() {
 
 // ===== EXPORT CSV =====
 
-// Exporte les recommandations en CSV
+// Exporte les recommandations en CSV (avec validation et gestion d'erreur)
 async function exportToCSV() {
     try {
-        // Récupérer les paramètres de filtrage actuels
-        const maxBoxes = document.getElementById('maxBoxes').value;
-        const minScore = document.getElementById('minScore').value;
+        let maxBoxes = document.getElementById('maxBoxes').value;
+        let minScore = document.getElementById('minScore').value;
         
-        // Construire l'URL avec les paramètres
-        const url = `/api/export-csv?max_boxes=${maxBoxes}&min_score=${minScore}`;
+        // Normaliser les entrées (gérer virgule décimale côté UI)
+        if (typeof minScore === 'string') {
+            minScore = minScore.replace(',', '.');
+        }
         
-        // Créer un lien de téléchargement temporaire
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `recommandations_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+        const params = new URLSearchParams({
+            max_boxes: String(maxBoxes || '20'),
+            min_score: String(minScore || '30')
+        });
         
-        // Déclencher le téléchargement
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const response = await fetch(`/api/export-csv?${params.toString()}`);
         
-        showSuccess('Export CSV en cours de téléchargement...');
+        if (!response.ok) {
+            // Tenter de lire l'erreur JSON du backend
+            let message = 'Erreur lors de l\'export CSV';
+            try {
+                const data = await response.json();
+                if (data && data.error) message = data.error;
+            } catch (_) {
+                // ignorer si non JSON
+            }
+            showError(message);
+            return;
+        }
         
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recommandations_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        
+        showSuccess('Export CSV téléchargé.');
     } catch (error) {
         console.error('Erreur lors de l\'export:', error);
-        showError('Erreur lors de l\'export CSV');
+        showError('Erreur de connexion au serveur');
     }
 }
 

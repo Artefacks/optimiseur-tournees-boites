@@ -798,15 +798,28 @@ class BoxCollectionOptimizer:
         """
         import csv
         from datetime import datetime
+        import os
         
         if filename is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"recommandations_{timestamp}.csv"
+        # Utiliser un chemin absolu pour éviter les problèmes de cwd
+        filename = os.path.abspath(filename)
         
         try:
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-                # En-têtes selon le format demandé (strictement ces 4 colonnes)
+                # En-têtes: identifiants + colonnes métriques demandées
                 fieldnames = [
+                    'Numéro de boîte',
+                    'Nom du client',
+                    'Adresse',
+                    'Code postal',
+                    'Ville',
+                    'Type de conteneur',
+                    'Identifiant Livraison',
+                    'Date de Livraison',
+                    'Score rentabilité',
+                    'Remplissage attendu [u]',
                     'Temps de servi',
                     'Revenu [CHF]',
                     'Volume [u ou m3]',
@@ -820,8 +833,13 @@ class BoxCollectionOptimizer:
                 prix_par_kg_chf = 0.20
                 poids_max_kg = 180.0
                 temps_livraison_minutes = 15  # 15 min par boîte
+                # Alias pour compatibilité avec anciens appels éventuels
+                temps_livraison = temps_livraison_minutes
                 
-                for rec in recommendations:
+                # Générer un identifiant de livraison séquentiel
+                base_order_number = 10000
+                
+                for idx, rec in enumerate(recommendations):
                     # Remplissage attendu sur échelle 0-10
                     expected_fill = float(rec.get('expected_fill', 0.0) or 0.0)
                     ratio_remplissage = max(0.0, min(expected_fill / 10.0, 1.0))
@@ -829,16 +847,35 @@ class BoxCollectionOptimizer:
                     # Calculs
                     poids_kg = poids_max_kg * ratio_remplissage
                     revenu_chf = poids_kg * prix_par_kg_chf
-                    volume_valeur = expected_fill  # garder l'échelle 0-10 (u)
+                    volume_valeur = expected_fill  # échelle 0-10 (u)
+                    volume_entier = int(round(volume_valeur))  # Volume affiché sans décimales
                     
                     # Format FR: 2 décimales, virgule comme séparateur décimal
                     def fmt_fr(value: float) -> str:
                         return f"{value:.2f}".replace('.', ',')
                     
+                    # Générer le nom recommandé (comme avant)
+                    try:
+                        box_data = self.df[self.df['n_boite'] == rec.get('box_id')]
+                        cont_type = box_data['conteneur'].iloc[0] if not box_data.empty else rec.get('container_type', 'Textile')
+                    except Exception:
+                        cont_type = rec.get('container_type', 'Textile')
+                    nom_recommande = self.generate_recommended_name(int(rec.get('box_id')), str(rec.get('commune')), str(cont_type))
+
                     row = {
-                        'Temps de servi': str(temps_livraison_minutes),
+                        'Numéro de boîte': rec.get('box_id'),
+                        'Nom du client': nom_recommande,
+                        'Adresse': rec.get('address'),
+                        'Code postal': str(rec.get('postal_code')).replace('.0', ''),
+                        'Ville': rec.get('commune'),
+                        'Type de conteneur': rec.get('container_type'),
+                        'Identifiant Livraison': str(base_order_number + idx),
+                        'Date de Livraison': datetime.now().strftime("%d/%m/%Y"),
+                        'Score rentabilité': f"{float(rec.get('profitability_score', 0.0)):.1f}".replace('.', ','),
+                        'Remplissage attendu [u]': f"{volume_valeur:.2f}",
+                        'Temps de servi': str(temps_livraison),
                         'Revenu [CHF]': fmt_fr(revenu_chf),
-                        'Volume [u ou m3]': f"{volume_valeur:.2f}",
+                        'Volume [u ou m3]': str(volume_entier),
                         'Poids [kg]': fmt_fr(poids_kg)
                     }
                     
